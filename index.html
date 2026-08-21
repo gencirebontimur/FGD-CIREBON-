@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FGD CIREBON - System Laporan</title>
+    <!-- Library untuk Cetak PDF & Gambar JPG -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --border: #e2e8f0;
+            --accent: #f0f9ff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+        }
+
+        .page { display: none; padding: 20px; }
+        .active-page { display: block; }
+
+        /* HALAMAN 1: OPENING */
+        #page-opening {
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .opening-card {
+            max-width: 650px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            padding: 40px 25px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .opening-card h1 { font-size: 2.5rem; margin-bottom: 15px; letter-spacing: 2px; font-weight: 800; }
+        .opening-card p { font-size: 1.15rem; opacity: 0.9; margin-bottom: 30px; font-weight: 300; line-height: 1.6; }
+
+        /* HALAMAN 2: SUBSTANSI */
+        .container { max-width: 950px; margin: 0 auto; }
+        
+        .card {
+            background: var(--card);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: var(--primary);
+            font-size: 1.25rem;
+            border-bottom: 2px solid var(--bg);
+            padding-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+
+        label { display: block; font-weight: 600; margin-top: 12px; margin-bottom: 6px; font-size: 0.9rem; color: #334155; }
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background-color: #fff;
+            transition: all 0.2s;
+        }
+
+        input[type="text"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+        }
+
+        textarea { height: 90px; resize: vertical; }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover { background: var(--primary-dark); }
+        .btn-success { background: #10b981; }
+        .btn-success:hover { background: #059669; }
+        .btn-add { background: var(--accent); color: var(--primary); border: 2px dashed #93c5fd; margin-top: 10px; }
+        .btn-add:hover { background: #e0f2fe; }
+        .btn-danger { background: #ef4444; padding: 6px 12px; font-size: 0.85rem; width: auto; float: right; border-radius: 6px; }
+
+        .problem-block {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        /* TABEL HASIL LAPORAN */
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; font-size: 0.88rem; }
+        th { background: #f1f5f9; color: #334155; font-weight: 600; }
+        
+        #tampilan-laporan { display: none; }
+        .badge {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+        .btn-group .btn { flex: 1; min-width: 180px; }
+    </style>
+</head>
+<body>
+
+    <!-- ================= HALAMAN 1: OPENING ================= -->
+    <div id="page-opening" class="page active-page">
+        <div class="opening-card">
+            <h1>FGD CIREBON</h1>
+            <p>Musyawarah terarah, menemukan akar masalah dan menciptakan action plan</p>
+            <button class="btn btn-success" onclick="goToSubstansi()">MULAI MENGISI LAPORAN 🚀</button>
+        </div>
+    </div>
+
+    <!-- ================= HALAMAN 2: SUBSTANSI ================= -->
+    <div id="page-substansi" class="page">
+        <div class="container">
+
+            <!-- FORM INPUT -->
+            <div id="form-input">
+                <div class="card" style="text-align: center; background: linear-gradient(to right, #e0f2fe, #f0f9ff); border-color: #bae6fd;">
+                    <h1 style="margin: 0; color: var(--primary); font-size: 1.8rem; font-weight: 800;">FGD CIREBON</h1>
+                    <p style="margin: 5px 0 0 0; color: #475569; font-weight: 500;">Formulir Evaluasi & Action Plan Kelompok</p>
+                </div>
+
+                <!-- Identitas Kelompok -->
+                <div class="card">
+                    <h2>📋 Identitas Kelompok</h2>
+                    <div class="grid-3">
+                        <div>
+                            <label>Nama Kelompok:</label>
+                            <input type="text" id="id-kelompok" placeholder="Contoh: Kelompok 1" oninput="autoSave()">
+                        </div>
+                        <div>
+                            <label>Nama Ketua:</label>
+                            <input type="text" id="id-ketua" placeholder="Nama Ketua" oninput="autoSave()">
+                        </div>
+                        <div>
+                            <label>Nama Fasilitator:</label>
+                            <input type="text" id="id-fasilitator" placeholder="Nama Fasilitator" oninput="autoSave()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Container Problem Dinamis -->
+                <div class="card">
+                    <h2>⚠️ Problem, Akar Masalah, Solusi & Action Plan</h2>
+                    <div id="problems-container"></div>
+                    
+                    <button type="button" class="btn btn-add" onclick="addProblemBlock()">➕ Tambah Problem Baru</button>
+                </div>
+
+                <button class="btn btn-success" onclick="generateLaporan()" style="margin-top: 10px; font-size: 1.1rem; padding: 15px;">
+                    TAMPILKAN HASIL LAPORAN 📊
+                </button>
+            </div>
+
+            <!-- TAMPILAN HASIL LAPORAN -->
+            <div id="tampilan-laporan">
+                <div id="area-cetak" style="background: white; padding: 20px; border-radius: 12px;">
+                    <div class="card" style="text-align: center; border-bottom: 3px solid var(--primary);">
+                        <h1 style="margin: 0; color: var(--primary); font-size: 2rem;">FGD CIREBON</h1>
+                        <p id="out-kelompok-info" style="font-weight: 600; margin-top: 8px; color: #475569;"></p>
+                    </div>
+
+                    <div class="card">
+                        <h2>📌 Ringkasan Hasil Musyawarah FGD</h2>
+                        <div id="out-substansi-list"></div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn" style="background: #64748b;" onclick="editForm()">✏️ Edit Form</button>
+                    <button class="btn btn-success" onclick="downloadPDF()">📄 Unduh PDF</button>
+                    <button class="btn" style="background: #0284c7;" onclick="downloadJPG()">🖼️ Unduh Gambar JPG</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+    let problemCount = 0;
+
+    function goToSubstansi() {
+        document.getElementById('page-opening').classList.remove('active-page');
+        document.getElementById('page-substansi').classList.add('active-page');
+        window.scrollTo(0,0);
+    }
+
+    function addProblemBlock(data = null) {
+        problemCount++;
+        const id = problemCount;
+        const container = document.getElementById('problems-container');
+
+        const html = `
+            <div class="problem-block" id="block-${id}">
+                <button type="button" class="btn btn-danger" onclick="removeProblemBlock(${id})">Hapus</button>
+                <h3 style="margin-top: 0; color: var(--primary);">Rangkaian Solusi #${id}</h3>
+                
+                <label>1. Problem (Permasalahan):</label>
+                <textarea id="p-problem-${id}" placeholder="Tuliskan permasalahan di sini..." oninput="autoSave()">${data ? data.problem : ''}</textarea>
+
+                <label>2. Akar Masalah:</label>
+                <textarea id="p-akar-${id}" placeholder="Tuliskan akar dari permasalahan tersebut..." oninput="autoSave()">${data ? data.akar : ''}</textarea>
+
+                <label>3. Solusi:</label>
+                <textarea id="p-solusi-${id}" placeholder="Tuliskan solusi yang disepakati..." oninput="autoSave()">${data ? data.solusi : ''}</textarea>
+
+                <label style="border-top: 1px dashed var(--border); margin-top: 15px; padding-top: 10px; color: var(--primary);">4. Action Plan (Terhubung dengan Problem #${id}):</label>
+                <div class="grid-3">
+                    <div>
+                        <label>Nama Kegiatan:</label>
+                        <input type="text" id="p-act-nama-${id}" placeholder="Nama kegiatan" value="${data ? data.actNama : ''}" oninput="autoSave()">
+                    </div>
+                    <div>
+                        <label>Bidang PPG Membidangi:</label>
+                        <input type="text" id="p-act-bidang-${id}" placeholder="Contoh: Bidang Kurikulum" value="${data ? data.bidang : ''}" oninput="autoSave()">
+                    </div>
+                    <div>
+                        <label>Target / Output:</label>
+                        <input type="text" id="p-act-target-${id}" placeholder="Target hasil" value="${data ? data.actTarget : ''}" oninput="autoSave()">
+                    </div>
+                </div>
+                <div class="grid-3" style="margin-top: 10px;">
+                    <div>
+                        <label>Waktu Pelaksanaan:</label>
+                        <input type="text" id="p-act-waktu-${id}" placeholder="Contoh: Pekan ke-2" value="${data ? data.actWaktu : ''}" oninput="autoSave()">
+                    </div>
+                    <div>
+                        <label>Penanggung Jawab (PJ):</label>
+                        <select id="p-act-pj-${id}" onchange="autoSave()">
+                            <option value="Penghar" ${data && data.actPj === 'Penghar' ? 'selected' : ''}>1. Penghar</option>
+                            <option value="Kurikulum" ${data && data.actPj === 'Kurikulum' ? 'selected' : ''}>2. Kurikulum</option>
+                            <option value="Tendik" ${data && data.actPj === 'Tendik' ? 'selected' : ''}>3. Tendik</option>
+                            <option value="Penggalang Dana" ${data && data.actPj === 'Penggalang Dana' ? 'selected' : ''}>4. Penggalang Dana</option>
+                            <option value="Sarana Prasarana" ${data && data.actPj === 'Sarana Prasarana' ? 'selected' : ''}>5. Sarana Prasarana</option>
+                            <option value="KMM" ${data && data.actPj === 'KMM' ? 'selected' : ''}>6. KMM</option>
+                            <option value="Seni & Olahraga" ${data && data.actPj === 'Seni & Olahraga' ? 'selected' : ''}>7. Seni & Olahraga</option>
+                            <option value="Kemandirian" ${data && data.actPj === 'Kemandirian' ? 'selected' : ''}>8. Kemandirian</option>
+                            <option value="Keputrian" ${data && data.actPj === 'Keputrian' ? 'selected' : ''}>9. Keputrian</option>
+                            <option value="Bimbingan Konseling" ${data && data.actPj === 'Bimbingan Konseling' ? 'selected' : ''}>10. Bimbingan Konseling</option>
+                            <option value="Tahfidz Quran" ${data && data.actPj === 'Tahfidz Quran' ? 'selected' : ''}>11. Tahfidz Quran</option>
+                            <option value="Mahasiswa" ${data && data.actPj === 'Mahasiswa' ? 'selected' : ''}>12. Mahasiswa</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', html);
+        autoSave();
+    }
+
+    function removeProblemBlock(id) {
+        const block = document.getElementById(`block-${id}`);
+        if(block) block.remove();
+        autoSave();
+    }
+
+    function autoSave() {
+        const formData = {
+            kelompok: document.getElementById('id-kelompok').value,
+            ketua: document.getElementById('id-ketua').value,
+            fasilitator: document.getElementById('id-fasilitator').value,
+            problems: []
+        };
+
+        const blocks = document.querySelectorAll('.problem-block');
+        blocks.forEach(block => {
+            const id = block.id.replace('block-', '');
+            formData.problems.push({
+                problem: document.getElementById(`p-problem-${id}`).value,
+                akar: document.getElementById(`p-akar-${id}`).value,
+                solusi: document.getElementById(`p-solusi-${id}`).value,
+                actNama: document.getElementById(`p-act-nama-${id}`).value,
+                bidang: document.getElementById(`p-act-bidang-${id}`).value,
+                actTarget: document.getElementById(`p-act-target-${id}`).value,
+                actWaktu: document.getElementById(`p-act-waktu-${id}`).value,
+                actPj: document.getElementById(`p-act-pj-${id}`).value
+            });
+        });
+
+        localStorage.setItem('fgd_cirebon_v2_data', JSON.stringify(formData));
+    }
+
+    function loadSavedData() {
+        const saved = localStorage.getItem('fgd_cirebon_v2_data');
+        if (saved) {
+            const data = JSON.parse(saved);
+            document.getElementById('id-kelompok').value = data.kelompok || '';
+            document.getElementById('id-ketua').value = data.ketua || '';
+            document.getElementById('id-fasilitator').value = data.fasilitator || '';
+
+            if (data.problems && data.problems.length > 0) {
+                data.problems.forEach(p => addProblemBlock(p));
+            } else {
+                addProblemBlock();
+            }
+        } else {
+            addProblemBlock();
+        }
+    }
+
+    function generateLaporan() {
+        autoSave();
+        const saved = JSON.parse(localStorage.getItem('fgd_cirebon_v2_data'));
+
+        document.getElementById('out-kelompok-info').innerText = `${saved.kelompok || 'Kelompok -'} | Ketua: ${saved.ketua || '-'} | Fasilitator: ${saved.fasilitator || '-'}`;
+
+        let html = '';
+        saved.problems.forEach((p, idx) => {
+            html += `
+                <div style="border-bottom: 2px dashed var(--border); margin-bottom: 25px; padding-bottom: 20px;">
+                    <h3 style="color: var(--primary); margin-bottom: 10px;">Masalah & Solusi #${idx + 1}</h3>
+                    <p><strong>⚠️ Problem:</strong> ${p.problem || '-'}</p>
+                    <p><strong>🔍 Akar Masalah:</strong> ${p.akar || '-'}</p>
+                    <p><strong>💡 Solusi:</strong> ${p.solusi || '-'}</p>
+                    
+                    <h4 style="margin-top: 15px; margin-bottom: 8px; color: #334155;">📅 Action Plan Terhubung:</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nama Kegiatan</th>
+                                <th>Bidang PPG</th>
+                                <th>Target / Output</th>
+                                <th>Waktu</th>
+                                <th>Penanggung Jawab (PJ)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${p.actNama || '-'}</td>
+                                <td>${p.bidang || '-'}</td>
+                                <td>${p.actTarget || '-'}</td>
+                                <td>${p.actWaktu || '-'}</td>
+                                <td><span class="badge">${p.actPj || '-'}</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        });
+
+        document.getElementById('out-substansi-list').innerHTML = html;
+        document.getElementById('form-input').style.display = 'none';
+        document.getElementById('tampilan-laporan').style.display = 'block';
+        window.scrollTo(0,0);
+    }
+
+    function editForm() {
+        document.getElementById('form-input').style.display = 'block';
+        document.getElementById('tampilan-laporan').style.display = 'none';
+        window.scrollTo(0,0);
+    }
+
+    // FUNGSI UNDUH PDF
+    function downloadPDF() {
+        const element = document.getElementById('area-cetak');
+        const opt = {
+            margin:       0.5,
+            filename:     'Laporan_FGD_Cirebon.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    // FUNGSI UNDUH JPG
+    function downloadJPG() {
+        const element = document.getElementById('area-cetak');
+        html2canvas(element, { scale: 2 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'Laporan_FGD_Cirebon.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 1.0);
+            link.click();
+        });
+    }
+
+    window.onload = loadSavedData;
+</script>
+
+</body>
+</html>
+
